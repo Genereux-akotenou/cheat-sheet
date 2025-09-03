@@ -21,6 +21,7 @@ pip install -U ipywidgets jupyterlab_widgets
 
 #### 4. Install other requirements
 ```bash
+wget -c https://github.com/Genereux-akotenou/cheat-sheet/blob/76f028c66a5ea0c8b0d07d0d8ce537b393bdfdd8/requirements.llmenv.txt
 pip -r requirements.llmenv.txt
 ```
 
