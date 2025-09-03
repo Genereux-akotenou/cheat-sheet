@@ -24,3 +24,13 @@ pip install -U ipywidgets jupyterlab_widgets
 pip -r requirements.llmenv.txt
 ```
 
+#### 5. Auto-detect all conda envs
+```bash
+conda install -y ipykernel
+python -m ipykernel install --user --name LLMHub --display-name "LLMHub"
+```
+OR
+```bash
+conda activate base
+conda install -y nb_conda_kernels
+```
