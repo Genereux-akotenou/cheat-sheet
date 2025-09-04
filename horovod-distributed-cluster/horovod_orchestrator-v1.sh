@@ -109,13 +109,6 @@ PUBKEY_CONTENT=$(rsudo "$MASTER_HOST" "$MASTER_USER" "$MASTER_PASS" "cat $SSH_DI
 if ((${#WORKERS_HOSTS[@]})); then
   echo
   echo "== Preparing WORKERS =="
-
-  # ensure gnome-terminal exists (fallback note)
-  if ! command -v gnome-terminal >/dev/null 2>&1; then
-    echo "ERROR: gnome-terminal not found. Install it or use the tmux variant."
-    exit 1
-  fi
-
   for i in "${!WORKERS_HOSTS[@]}"; do
     H="${WORKERS_HOSTS[$i]}" ; U="${WORKERS_USERS[$i]}" ; P="${WORKERS_PASS[$i]}"
     echo "-- Worker $H"
@@ -124,28 +117,23 @@ if ((${#WORKERS_HOSTS[@]})); then
     # write master's pubkey to authorized_keys
     rsudo "$H" "$U" "$P" "printf '%s\n' \"$PUBKEY_CONTENT\" > $SSH_DIR/authorized_keys && chmod 600 $SSH_DIR/authorized_keys"
 
-    # open a new GUI terminal, SSH in, sudo-auth, then run docker in foreground with a real TTY
-    gnome-terminal -- bash -lc "
-      sshpass -p '$P' ssh -tt -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $U@$H \
-        \"sudo -k; \
-         printf '%s\n' '$P' | sudo -S -p '' -v || exit 1; \
-         sudo bash -lc 'docker rm -f $WORKER_CONTAINER_NAME 2>/dev/null || true; \
-           docker run -it --name $WORKER_CONTAINER_NAME \
-             --gpus all --network=host \
-             -v $SSH_DIR:/root/.ssh:ro \
-             $IMAGE \
-             /usr/sbin/sshd -p $SSH_PORT -D \
-               -o PermitRootLogin=yes \
-               -o PubkeyAuthentication=yes \
-               -o PasswordAuthentication=no'\"; \
-      echo; echo '=== Worker $H session ended ==='; \
-      exec bash"
-    echo "   Worker $H started in a new terminal window (live logs visible)."
+    # start / restart worker container, mount /workspace from host path C
+    rsudo "$H" "$U" "$P" "
+      docker rm -f $WORKER_CONTAINER_NAME 2>/dev/null || true;
+      docker run -d --name $WORKER_CONTAINER_NAME \
+        --gpus all --network=host \
+        -v $SSH_DIR:/root/.ssh:ro \
+        $IMAGE \
+        /usr/sbin/sshd -p $SSH_PORT -D \
+          -o PermitRootLogin=yes \
+          -o PubkeyAuthentication=yes \
+          -o PasswordAuthentication=no
+    "
+    echo "   Worker $H ready (sshd on $SSH_PORT)."
   done
 else
   echo "No workers provided; you can still run single-node on the MASTER."
 fi
-
 
 # -----------------------------
 # 5) Start JupyterLab on MASTER (detached), mount /workspace, show URL
