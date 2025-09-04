@@ -7,7 +7,6 @@ sudo apt-get install -y sshpass
 # -----------------------------
 # Config you can change
 # -----------------------------
-SSH_DIR="/opt/horovod/ssh"
 SSH_PORT=12345
 IMAGE="horovod/horovod:latest"
 MASTER_CONTAINER_NAME="hmaster"
@@ -52,7 +51,6 @@ rsudo() {  # remote sudo with safe quoting
     "$user@$host" "sudo -k; printf '%s\n' '$pass' | sudo -S -p '' bash -lc 'set -e; $cmd'"
 }
 
-
 rcopy_put() { # scp put
   local src="$1" host="$2" user="$3" pass="$4" dst="$5"
   sshpass -p "$pass" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$src" "$user@$host:$dst"
@@ -67,10 +65,11 @@ echo "== MASTER node info =="
 MASTER_HOST=$(ask "Master IP/host")
 MASTER_USER=$(ask "Master SSH username" "workshop")
 MASTER_PASS=$(ask_secret "Master SSH password")
+SSH_DIR="/home/$MASTER_USER/.horovod_ssh"
 
 # Workspace path on MASTER host to mount to /workspace
-MASTER_CODE=$(ask "Path to your project folder ON MASTER (host path to mount at /workspace)" "/home/$MASTER_USER/myproject")
-if [[ -z "$MASTER_CODE" ]]; then MASTER_CODE="/home/$MASTER_USER/myproject"; fi
+MASTER_CODE=$(ask "Path to your project folder ON MASTER (host path to mount at /workspace)" "/home/$MASTER_USER/HOROVOD/project_0")
+if [[ -z "$MASTER_CODE" ]]; then MASTER_CODE="/home/$MASTER_USER/HOROVOD/project_0"; fi
 
 # -----------------------------
 # 2) Collect WORKERS
@@ -96,7 +95,7 @@ echo "== Preparing MASTER ($MASTER_HOST) =="
 rsudo "$MASTER_HOST" "$MASTER_USER" "$MASTER_PASS" "docker --version >/dev/null"
 rsudo "$MASTER_HOST" "$MASTER_USER" "$MASTER_PASS" "mkdir -p $SSH_DIR && chmod 700 $SSH_DIR && chown -R root:root $SSH_DIR"
 # generate key if not exists
-rsudo "$MASTER_HOST" "$MASTER_USER" "$MASTER_PASS" "[ -f $SSH_DIR/id_rsa ] || ssh-keygen -t rsa -b 4096 -N '' -f $SSH_DIR/id_rsa"
+rsudo "$MASTER_HOST" "$MASTER_USER" "$MASTER_PASS" "[ -f $SSH_DIR/id_rsa ] || ssh-keygen -t rsa -b 4096 -N \"\" -f $SSH_DIR/id_rsa"
 # ensure authorized_keys exists containing our pubkey
 rsudo "$MASTER_HOST" "$MASTER_USER" "$MASTER_PASS" "cp -f $SSH_DIR/id_rsa.pub $SSH_DIR/authorized_keys; chmod 600 $SSH_DIR/id_rsa $SSH_DIR/authorized_keys $SSH_DIR/id_rsa.pub"
 
@@ -172,6 +171,7 @@ rsudo "$MASTER_HOST" "$MASTER_USER" "$MASTER_PASS" "
       ln -sfn /horovod/examples /srv/jlab/examples && \
       ln -sfn /workspace        /srv/jlab/workspace && \
       curl -sSL -o /srv/jlab/start.ipynb https://raw.githubusercontent.com/Genereux-akotenou/cheat-sheet/030abb3c119b8b3b3963f83c6dbf21fb67ce6f26/horovod-distributed-cluster/start.ipynb && \
+      curl -sSL -o /srv/jlab/start.note https://raw.githubusercontent.com/Genereux-akotenou/cheat-sheet/030abb3c119b8b3b3963f83c6dbf21fb67ce6f26/horovod-distributed-cluster/start.note && \
       jupyter lab --ServerApp.root_dir=/srv/jlab \
                   --ip=0.0.0.0 --port=$JUPYTER_PORT \
                   --ServerApp.token=$JUPYTER_TOKEN \
