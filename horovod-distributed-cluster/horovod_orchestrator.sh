@@ -170,8 +170,8 @@ rsudo "$MASTER_HOST" "$MASTER_USER" "$MASTER_PASS" "
       mkdir -p /srv/jlab && \
       ln -sfn /horovod/examples /srv/jlab/examples && \
       ln -sfn /workspace        /srv/jlab/workspace && \
-      curl -sSL -o /srv/jlab/start.ipynb https://raw.githubusercontent.com/Genereux-akotenou/cheat-sheet/030abb3c119b8b3b3963f83c6dbf21fb67ce6f26/horovod-distributed-cluster/start.ipynb && \
-      curl -sSL -o /srv/jlab/start.note https://github.com/Genereux-akotenou/cheat-sheet/blob/2da85711a0d32396e154f3ae784c49d23d26eff1/horovod-distributed-cluster/start.note && \
+      curl -sSL -o /srv/jlab/start.ipynb https://raw.githubusercontent.com/Genereux-akotenou/cheat-sheet/refs/heads/main/horovod-distributed-cluster/start.ipynb && \
+      curl -sSL -o /srv/jlab/start.note https://raw.githubusercontent.com/Genereux-akotenou/cheat-sheet/refs/heads/main/horovod-distributed-cluster/start.note && \
       jupyter lab --ServerApp.root_dir=/srv/jlab \
                   --ip=0.0.0.0 --port=$JUPYTER_PORT \
                   --ServerApp.token=$JUPYTER_TOKEN \
